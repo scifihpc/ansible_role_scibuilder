@@ -1,0 +1,7 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include scifihpc.ansible_role_scibuilder"
+      include_role:
+        name: "scifihpc.ansible_role_scibuilder"
