@@ -2,3 +2,6 @@
 # vars file for ansible_role_scibuilder
 
 scibuilder_local_folder: /opt/scibuilder
+scibuilder_user_name:    triton-ci
+scibuilder_user_uid:     2000407
+scibuilder_user_gid:     2000407
