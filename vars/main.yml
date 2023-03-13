@@ -1,2 +1,4 @@
 ---
 # vars file for ansible_role_scibuilder
+
+scibuilder_local_folder: /opt/scibuilder

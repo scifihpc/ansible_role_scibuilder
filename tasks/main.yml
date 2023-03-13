@@ -1,2 +1,32 @@
 ---
 # tasks file for ansible_role_scibuilder
+
+
+- name: Molecule Hello World!
+  ansible.builtin.debug:
+    msg: Hello, World!
+
+
+- name: Create the local folder for scibuilder
+  ansible.builtin.file:
+    path: "{{ scibuilder_local_folder}}"
+    state: directory
+
+
+- name: Install git
+  ansible.builtin.dnf:
+    name: git
+    state: present
+
+- name: Check out spack
+  ansible.builtin.git:
+    dest: "{{ scibuilder_local_folder}}/spack"
+    repo: "https://github.com/spack/spack.git"
+
+
+- name: Check out scibuilder
+  ansible.builtin.git:
+    dest: "{{ scibuilder_local_folder}}/scibuilder"
+    repo: "https://github.com/scifihpc/scibuilder.git"
+
+    
