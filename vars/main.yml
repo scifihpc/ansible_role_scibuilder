@@ -5,3 +5,12 @@ scibuilder_local_folder: /opt/scibuilder
 scibuilder_user_name:    triton-ci
 scibuilder_user_uid:     2000407
 scibuilder_user_gid:     2000407
+
+# https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
+github_runner_url:      "https://github.com/actions/runner/releases/download/v2.302.1/"
+github_runner_filename:                             "actions-runner-linux-x64-2.302.1.tar.gz"
+#github_runner_repo: "https://github.com/scifihpc/sandbox_4_actions"
+github_runner_org: "scifihpc"
+github_runner_repo: "sandbox_4_actions"
+github_runner_token: "THISISAFAKETOKENGETYOURREAL11"
+github_runner_name: "woohoo"

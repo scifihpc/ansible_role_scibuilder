@@ -25,11 +25,71 @@
     name: "{{ scibuilder_user_name }}"
     gid:  "{{ scibuilder_user_gid  }}"
     state: present
-    
-    
+
+
 - name: Create user account for scibuilder
   ansible.builtin.user:
     name:  "{{ scibuilder_user_name }}"
     uid:   "{{ scibuilder_user_uid  }}"
     group: "{{ scibuilder_user_name }}"
-  
+
+
+- name: install podman
+  ansible.builtin.dnf:
+    name: ["podman", "podman-docker","container-selinux"]
+    state: present
+
+# https://github.com/containers/podman/issues/3234
+#- name: uninstall  container-selinux
+#  ansible.builtin.dnf:
+#    name: ["container-selinux"]
+#    state: absent
+#- name: reinstall  container-selinux
+#  ansible.builtin.dnf:
+#    name: ["container-selinux"]
+#    state: present
+
+
+- name: create folder for runner
+  ansible.builtin.file:
+    path: "{{ scibuilder_local_folder}}/runner"
+    state: directory
+    group: "{{scibuilder_user_name}}"
+    owner: "{{scibuilder_user_name}}"
+
+
+# https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
+- name: Download & Unarchive runner package
+  ansible.builtin.unarchive:
+    src:  "{{ github_runner_url }}{{github_runner_filename}}"
+    dest: "{{ scibuilder_local_folder}}/runner"
+    remote_src: yes
+    group: "{{scibuilder_user_name}}"
+    owner: "{{scibuilder_user_name}}"
+
+- name: install sudo to work as a different user
+  ansible.builtin.dnf:
+    name: ["sudo"]
+    state: present
+
+- name: install runner dependencies
+  ansible.builtin.dnf:
+    name: ["libicu"]
+    state: present
+
+
+- name: Configure the runner
+  ansible.builtin.command:
+    cmd: "./config.sh --url https://github.com/{{github_runner_org}}/{{ github_runner_repo }} --token {{ github_runner_token }} --unattended --name {{ github_runner_name }} --replace"
+    chdir:  "{{ scibuilder_local_folder}}/runner"
+    creates: "{{ scibuilder_local_folder}}/runner/svc.sh"
+  become: yes
+  become_user: "{{scibuilder_user_name}}"
+
+# https://docs.github.com/en/actions/hosting-your-own-runners/configuring-the-self-hosted-runner-application-as-a-service
+- name: Install runner as a service
+  ansible.builtin.command:
+    cmd: "./svc.sh install {{ scibuilder_user_name }}"
+    chdir:  "{{ scibuilder_local_folder}}/runner"
+    creates: "/etc/systemd/system/actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ github_runner_name }}.service"
+
