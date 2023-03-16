@@ -93,3 +93,9 @@
     chdir:  "{{ scibuilder_local_folder}}/runner"
     creates: "/etc/systemd/system/actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ github_runner_name }}.service"
 
+- name: Start the service
+  ansible.builtin.systemd:
+    state: started
+    name: "actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ github_runner_name }}.service"
+  tags: ["start_runner"]
+
