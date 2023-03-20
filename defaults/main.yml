@@ -1,2 +1,17 @@
 ---
-# defaults file for ansible_role_scibuilder
+# vars file for ansible_role_scibuilder
+
+scibuilder_local_folder: /opt/scibuilder
+scibuilder_user_name:    triton-ci
+scibuilder_user_uid:     2000407
+scibuilder_user_gid:     2000407
+
+# https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
+github_runner_url:      "https://github.com/actions/runner/releases/download/v2.303.0/"
+github_runner_filename:                             "actions-runner-linux-x64-2.303.0.tar.gz"
+#github_runner_repo: "https://github.com/scifihpc/"
+github_runner_org: "scifihpc"
+github_runner_repo: "scibuilder-aalto-hy-configs"
+github_runner_token: "THISISAFAKETOKENGETYOURREAL11"
+github_runner_name: "configs_ahy_root_001"
+github_runner_folder: "runner_{{ github_runner_name }}"
