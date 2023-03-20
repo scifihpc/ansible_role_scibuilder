@@ -3,11 +3,6 @@
 
 
 
-- name: Create the local folder for scibuilder
-  ansible.builtin.file:
-    path: "{{ scibuilder_local_folder}}"
-    state: directory
-
 
 - name: Install git
   ansible.builtin.dnf:
@@ -19,6 +14,8 @@
   ansible.builtin.git:
     dest: "{{ scibuilder_local_folder}}/scibuilder"
     repo: "https://github.com/scifihpc/scibuilder.git"
+  become: yes
+  become_user: "{{scibuilder_user_name}}"
 
 - name: Ensure a unix-group for scibuilder exists
   ansible.builtin.group:
@@ -32,6 +29,14 @@
     name:  "{{ scibuilder_user_name }}"
     uid:   "{{ scibuilder_user_uid  }}"
     group: "{{ scibuilder_user_name }}"
+
+- name: Create the local folder for scibuilder
+  ansible.builtin.file:
+    path: "{{ scibuilder_local_folder}}"
+    state: directory
+    owner: "{{ scibuilder_user_name }}"
+    group: "{{ scibuilder_user_name }}"
+
 
 
 - name: install podman
@@ -52,7 +57,7 @@
 
 - name: create folder for runner
   ansible.builtin.file:
-    path: "{{ scibuilder_local_folder}}/runner"
+    path: "{{ scibuilder_local_folder}}/{{ github_runner_folder }}"
     state: directory
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
@@ -62,7 +67,7 @@
 - name: Download & Unarchive runner package
   ansible.builtin.unarchive:
     src:  "{{ github_runner_url }}{{github_runner_filename}}"
-    dest: "{{ scibuilder_local_folder}}/runner"
+    dest: "{{ scibuilder_local_folder}}/{{ github_runner_folder }}"
     remote_src: yes
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
@@ -81,8 +86,8 @@
 - name: Configure the runner
   ansible.builtin.command:
     cmd: "./config.sh --url https://github.com/{{github_runner_org}}/{{ github_runner_repo }} --token {{ github_runner_token }} --unattended --name {{ github_runner_name }} --replace"
-    chdir:  "{{ scibuilder_local_folder}}/runner"
-    creates: "{{ scibuilder_local_folder}}/runner/svc.sh"
+    chdir:  "{{ scibuilder_local_folder}}/{{ github_runner_folder }}"
+    creates: "{{ scibuilder_local_folder}}/{{ github_runner_folder }}/svc.sh"
   become: yes
   become_user: "{{scibuilder_user_name}}"
 
@@ -90,7 +95,9 @@
 - name: Install runner as a service
   ansible.builtin.command:
     cmd: "./svc.sh install {{ scibuilder_user_name }}"
-    chdir:  "{{ scibuilder_local_folder}}/runner"
+# The version without a username would create a runner running as root
+#    cmd: "./svc.sh install"
+    chdir:  "{{ scibuilder_local_folder}}/{{ github_runner_folder }}"
     creates: "/etc/systemd/system/actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ github_runner_name }}.service"
 
 - name: Start the service
@@ -99,3 +106,17 @@
     name: "actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ github_runner_name }}.service"
   tags: ["start_runner"]
 
+
+
+# loginctl enable-linger      2000407
+# usermod --add-subuids 100000-165535 --add-subgids 100000-165535 triton-ci
+# usermod --add-subuids 400100000-400165535 --add-subgids 400100000-400165535 triton-ci
+# systemctl start podman.socket
+# touch /etc/containers/nodocker
+
+# https://access.redhat.com/solutions/6986578
+#  setenforce 0
+#  dnf install libsemanage
+#  dnf reinstall container-selinux
+#  setenforce 1 
+#
