@@ -55,22 +55,26 @@
 #    state: present
 
 
+
+
 - name: create folder for runner
   ansible.builtin.file:
-    path: "{{ scibuilder_local_folder}}/{{ github_runner_folder }}"
+    path: "{{ scibuilder_local_folder}}/runner_{{ item }}"
     state: directory
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
+  loop: "{{ github_runner_name }}"
 
 
 # https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
 - name: Download & Unarchive runner package
   ansible.builtin.unarchive:
     src:  "{{ github_runner_url }}{{github_runner_filename}}"
-    dest: "{{ scibuilder_local_folder}}/{{ github_runner_folder }}"
+    dest: "{{ scibuilder_local_folder}}/runner_{{ item }}"
     remote_src: yes
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
+  loop: "{{ github_runner_name }}"
 
 - name: install sudo to work as a different user
   ansible.builtin.dnf:
@@ -85,11 +89,12 @@
 
 - name: Configure the runner
   ansible.builtin.command:
-    cmd: "./config.sh --url https://github.com/{{github_runner_org}}/{{ github_runner_repo }} --token {{ github_runner_token }} --unattended --name {{ github_runner_name }} --replace"
-    chdir:  "{{ scibuilder_local_folder}}/{{ github_runner_folder }}"
-    creates: "{{ scibuilder_local_folder}}/{{ github_runner_folder }}/svc.sh"
+    cmd: "./config.sh --url https://github.com/{{github_runner_org}}/{{ github_runner_repo }} --token {{ github_runner_token }} --unattended --name {{ item }} --replace"
+    chdir:  "{{ scibuilder_local_folder}}/runner_{{ item }}"
+    creates: "{{ scibuilder_local_folder}}/runner_{{ item }}/svc.sh"
   become: yes
   become_user: "{{scibuilder_user_name}}"
+  loop: "{{ github_runner_name }}"
 
 # https://docs.github.com/en/actions/hosting-your-own-runners/configuring-the-self-hosted-runner-application-as-a-service
 - name: Install runner as a service
@@ -97,14 +102,16 @@
     cmd: "./svc.sh install {{ scibuilder_user_name }}"
 # The version without a username would create a runner running as root
 #    cmd: "./svc.sh install"
-    chdir:  "{{ scibuilder_local_folder}}/{{ github_runner_folder }}"
-    creates: "/etc/systemd/system/actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ github_runner_name }}.service"
+    chdir:  "{{ scibuilder_local_folder}}/runner_{{ item }}"
+    creates: "/etc/systemd/system/actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ item }}.service"
+  loop: "{{ github_runner_name }}"
 
 - name: Start the service
   ansible.builtin.systemd:
     state: started
-    name: "actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ github_runner_name }}.service"
+    name: "actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ item }}.service"
   tags: ["start_runner"]
+  loop: "{{ github_runner_name }}"
 
 
 

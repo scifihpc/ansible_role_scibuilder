@@ -12,6 +12,6 @@ github_runner_filename:                             "actions-runner-linux-x64-2.
 #github_runner_repo: "https://github.com/scifihpc/"
 github_runner_org: "scifihpc"
 github_runner_repo: "scibuilder-aalto-hy-configs"
-github_runner_token: "THISISAFAKETOKENGETYOURREAL11"
-github_runner_name: "configs_ahy_root_001"
-github_runner_folder: "runner_{{ github_runner_name }}"
+github_runner_token: ""THISISAFAKETOKENGETYOURREAL11""
+github_runner_name: ["scifihpc_builder_001","scifihpc_builder_002","scifihpc_builder_003",
+                     "scifihpc_builder_004","scifihpc_builder_005","scifihpc_builder_006"]
