@@ -59,7 +59,7 @@
 
 - name: create folder for runner
   ansible.builtin.file:
-    path: "{{ scibuilder_local_folder}}/runner_{{ item }}"
+    path: "{{ scibuilder_local_folder}}/runners/{{ item }}"
     state: directory
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
@@ -70,7 +70,7 @@
 - name: Download & Unarchive runner package
   ansible.builtin.unarchive:
     src:  "{{ github_runner_url }}{{github_runner_filename}}"
-    dest: "{{ scibuilder_local_folder}}/runner_{{ item }}"
+    dest: "{{ scibuilder_local_folder}}/runners/{{ item }}"
     remote_src: yes
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
@@ -90,8 +90,8 @@
 - name: Configure the runner
   ansible.builtin.command:
     cmd: "./config.sh --url https://github.com/{{github_runner_org}}/{{ github_runner_repo }} --token {{ github_runner_token }} --unattended --name {{ item }} --replace"
-    chdir:  "{{ scibuilder_local_folder}}/runner_{{ item }}"
-    creates: "{{ scibuilder_local_folder}}/runner_{{ item }}/svc.sh"
+    chdir:  "{{ scibuilder_local_folder}}/runners/{{ item }}"
+    creates: "{{ scibuilder_local_folder}}/runners/{{ item }}/svc.sh"
   become: yes
   become_user: "{{scibuilder_user_name}}"
   loop: "{{ github_runner_name }}"
@@ -102,7 +102,7 @@
     cmd: "./svc.sh install {{ scibuilder_user_name }}"
 # The version without a username would create a runner running as root
 #    cmd: "./svc.sh install"
-    chdir:  "{{ scibuilder_local_folder}}/runner_{{ item }}"
+    chdir:  "{{ scibuilder_local_folder}}/runners/{{ item }}"
     creates: "/etc/systemd/system/actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ item }}.service"
   loop: "{{ github_runner_name }}"
 
