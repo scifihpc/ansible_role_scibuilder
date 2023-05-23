@@ -4,19 +4,6 @@
 
 
 
-- name: Install git
-  ansible.builtin.dnf:
-    name: git
-    state: present
-
-
-- name: Check out scibuilder
-  ansible.builtin.git:
-    dest: "{{ scibuilder_local_folder}}/scibuilder"
-    repo: "https://github.com/scifihpc/scibuilder.git"
-  become: yes
-  become_user: "{{scibuilder_user_name}}"
-
 - name: Ensure a unix-group for scibuilder exists
   ansible.builtin.group:
     name: "{{ scibuilder_user_name }}"
@@ -30,6 +17,23 @@
     uid:   "{{ scibuilder_user_uid  }}"
     group: "{{ scibuilder_user_name }}"
 
+- name: Enable lingering
+  ansible.builtin.command: "loginctl enable-linger {{ scibuilder_user_uid }}"
+  args:
+    creates: '/var/lib/systemd/linger/{{ scibuilder_user_name }}'
+
+
+- name: Generate subuids and subgids
+  ansible.builtin.include_role:
+    name: ansible-role-subuid_subgid
+    tasks_from: "main"
+  vars: 
+    subid_users: 
+    - "{{scibuilder_user_name}}"
+    subuid_bitshift: 8 
+    subgid_bitshift: 8 #"{{subgid_bits}}"
+  # remember that tag limitations will affect also the included roles. 
+
 - name: Create the local folder for scibuilder
   ansible.builtin.file:
     path: "{{ scibuilder_local_folder}}"
@@ -37,6 +41,31 @@
     owner: "{{ scibuilder_user_name }}"
     group: "{{ scibuilder_user_name }}"
 
+
+# The action tries to mount /var/run/docker.sock inside the container, but this is not available in
+# rootless podman
+# https://github.com/actions/runner/pull/1754
+# https://github.com/containers/podman/issues/18480
+- name: replace /var/run/docker.sock with /run/user/UID/podman/podman.sock
+  ansible.builtin.file:
+    path: "/var/run/docker.sock"
+    src: "/run/user/{{scibuilder_user_uid}}/podman/podman.sock"
+    state: link
+  tags: [socket]
+
+
+- name: Install git
+  ansible.builtin.dnf:
+    name: git
+    state: present
+
+
+- name: Check out scibuilder
+  ansible.builtin.git:
+    dest: "{{ scibuilder_local_folder}}/scibuilder"
+    repo: "https://github.com/scifihpc/scibuilder.git"
+  become: yes
+  become_user: "{{scibuilder_user_name}}"
 
 
 - name: install podman
@@ -54,7 +83,22 @@
 #    name: ["container-selinux"]
 #    state: present
 
+- name: create /etc/containers/nodocker to quiescene podman
+  ansible.builtin.file:
+    path: /etc/containers/nodocker
+    state: touch
 
+- name: start user podman socket
+  ansible.builtin.systemd:
+     name: podman.socket
+     state: started
+     scope: user
+  environment:
+     XDG_RUNTIME_DIR: "/run/user/{{ scibuilder_user_uid }}"
+     DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ scibuilder_user_uid }}/bus"
+  become: yes
+  become_user: "{{scibuilder_user_name}}"
+  tags: ["socket"]
 
 
 - name: create folder for runner
@@ -64,7 +108,6 @@
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
   loop: "{{ github_runner_name }}"
-
 
 # https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
 - name: Download & Unarchive runner package
@@ -84,7 +127,7 @@
 - name: install runner dependencies
   ansible.builtin.dnf:
     name: ["libicu"]
-    state: present
+    state: latest
 
 
 - name: Configure the runner
@@ -115,15 +158,3 @@
 
 
 
-# loginctl enable-linger      2000407
-# usermod --add-subuids 100000-165535 --add-subgids 100000-165535 triton-ci
-# usermod --add-subuids 400100000-400165535 --add-subgids 400100000-400165535 triton-ci
-# systemctl start podman.socket
-# touch /etc/containers/nodocker
-
-# https://access.redhat.com/solutions/6986578
-#  setenforce 0
-#  dnf install libsemanage
-#  dnf reinstall container-selinux
-#  setenforce 1 
-#
