@@ -42,17 +42,6 @@
     group: "{{ scibuilder_user_name }}"
 
 
-# The action tries to mount /var/run/docker.sock inside the container, but this is not available in
-# rootless podman
-# https://github.com/actions/runner/pull/1754
-# https://github.com/containers/podman/issues/18480
-- name: replace /var/run/docker.sock with /run/user/UID/podman/podman.sock
-  ansible.builtin.file:
-    path: "/var/run/docker.sock"
-    src: "/run/user/{{scibuilder_user_uid}}/podman/podman.sock"
-    state: link
-  tags: [socket]
-
 
 - name: Install git
   ansible.builtin.dnf:
@@ -99,6 +88,20 @@
   become: yes
   become_user: "{{scibuilder_user_name}}"
   tags: ["socket"]
+
+
+# The action tries to mount /var/run/docker.sock inside the container, but this is not available in
+# rootless podman
+# https://github.com/actions/runner/pull/1754
+# https://github.com/containers/podman/issues/18480
+- name: replace /var/run/docker.sock with /run/user/UID/podman/podman.sock
+  ansible.builtin.file:
+    path: "/var/run/docker.sock"
+    src: "/run/user/{{scibuilder_user_uid}}/podman/podman.sock"
+    state: link
+    force: yes
+  tags: [socket]
+
 
 
 - name: create folder for runner
