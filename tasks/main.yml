@@ -92,6 +92,7 @@
 
 # The action tries to mount /var/run/docker.sock inside the container, but this is not available in
 # rootless podman
+# https://github.com/actions/actions-runner-controller/issues/2548
 # https://github.com/actions/runner/pull/1754
 # https://github.com/containers/podman/issues/18480
 - name: replace /var/run/docker.sock with /run/user/UID/podman/podman.sock
