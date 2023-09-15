@@ -5,13 +5,17 @@ scibuilder_local_folder: /opt/scibuilder
 scibuilder_user_name:    triton-ci
 scibuilder_user_uid:     2000407
 scibuilder_user_gid:     2000407
+scibuilder_buildcache_folders:
+  - /opt/scibuilder/buildcache
+  - /opt/scibuilder/buildcache-dev
 
 # https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
-github_runner_url:      "https://github.com/actions/runner/releases/download/v2.303.0/"
-github_runner_filename:                             "actions-runner-linux-x64-2.303.0.tar.gz"
+github_runner_version: 2.303.0
+github_runner_filename: "actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
+github_runner_url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/"
 #github_runner_repo: "https://github.com/scifihpc/"
 github_runner_org: "scifihpc"
-github_runner_repo: "scibuilder-aalto-hy-configs"
+github_runner_repo: "scibuilder-workflows"
 github_runner_token: "THISISAFAKETOKENGETYOURREAL11"
 github_runner_name: ["scifihpc_builder_001","scifihpc_builder_002","scifihpc_builder_003",
                      "scifihpc_builder_004","scifihpc_builder_005","scifihpc_builder_006"]

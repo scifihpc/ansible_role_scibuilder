@@ -2,8 +2,6 @@
 # tasks file for ansible_role_scibuilder
 
 
-
-
 - name: Ensure a unix-group for scibuilder exists
   ansible.builtin.group:
     name: "{{ scibuilder_user_name }}"
@@ -16,6 +14,7 @@
     name:  "{{ scibuilder_user_name }}"
     uid:   "{{ scibuilder_user_uid  }}"
     group: "{{ scibuilder_user_name }}"
+
 
 - name: Enable lingering
   ansible.builtin.command: "loginctl enable-linger {{ scibuilder_user_uid }}"
@@ -34,6 +33,7 @@
     subgid_bitshift: 8 #"{{subgid_bits}}"
   # remember that tag limitations will affect also the included roles. 
 
+
 - name: Create the local folder for scibuilder
   ansible.builtin.file:
     path: "{{ scibuilder_local_folder}}"
@@ -42,42 +42,28 @@
     group: "{{ scibuilder_user_name }}"
 
 
-
-- name: Install git
-  ansible.builtin.dnf:
-    name: git
-    state: present
-
-
-- name: Check out scibuilder
-  ansible.builtin.git:
-    dest: "{{ scibuilder_local_folder}}/scibuilder"
-    repo: "https://github.com/scifihpc/scibuilder.git"
-  become: yes
-  become_user: "{{scibuilder_user_name}}"
+- name: Create buildcache folders
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ scibuilder_user_name }}"
+    group: "{{ scibuilder_user_name }}"
+  with_items: scibuilder_buildcache_folders
 
 
-- name: install podman
+- name: Install podman
   ansible.builtin.dnf:
     name: ["podman", "podman-docker","container-selinux"]
     state: present
 
-# https://github.com/containers/podman/issues/3234
-#- name: uninstall  container-selinux
-#  ansible.builtin.dnf:
-#    name: ["container-selinux"]
-#    state: absent
-#- name: reinstall  container-selinux
-#  ansible.builtin.dnf:
-#    name: ["container-selinux"]
-#    state: present
 
-- name: create /etc/containers/nodocker to quiescene podman
+- name: Create /etc/containers/nodocker to silence podman
   ansible.builtin.file:
     path: /etc/containers/nodocker
     state: touch
 
-- name: start user podman socket
+
+- name: Start user podman socket
   ansible.builtin.systemd:
      name: podman.socket
      state: started
@@ -95,7 +81,7 @@
 # https://github.com/actions/actions-runner-controller/issues/2548
 # https://github.com/actions/runner/pull/1754
 # https://github.com/containers/podman/issues/18480
-- name: replace /var/run/docker.sock with /run/user/UID/podman/podman.sock
+- name: Replace /var/run/docker.sock with /run/user/UID/podman/podman.sock
   ansible.builtin.file:
     path: "/var/run/docker.sock"
     src: "/run/user/{{scibuilder_user_uid}}/podman/podman.sock"
@@ -104,14 +90,14 @@
   tags: [socket]
 
 
-
-- name: create folder for runner
+- name: Create folder for runner
   ansible.builtin.file:
     path: "{{ scibuilder_local_folder}}/runners/{{ item }}"
     state: directory
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
   loop: "{{ github_runner_name }}"
+
 
 # https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
 - name: Download & Unarchive runner package
@@ -123,12 +109,14 @@
     owner: "{{scibuilder_user_name}}"
   loop: "{{ github_runner_name }}"
 
-- name: install sudo to work as a different user
+
+- name: Install sudo to work as a different user
   ansible.builtin.dnf:
     name: ["sudo"]
     state: present
 
-- name: install runner dependencies
+
+- name: Install runner dependencies
   ansible.builtin.dnf:
     name: ["libicu"]
     state: latest
@@ -143,15 +131,15 @@
   become_user: "{{scibuilder_user_name}}"
   loop: "{{ github_runner_name }}"
 
+
 # https://docs.github.com/en/actions/hosting-your-own-runners/configuring-the-self-hosted-runner-application-as-a-service
 - name: Install runner as a service
   ansible.builtin.command:
     cmd: "./svc.sh install {{ scibuilder_user_name }}"
-# The version without a username would create a runner running as root
-#    cmd: "./svc.sh install"
     chdir:  "{{ scibuilder_local_folder}}/runners/{{ item }}"
     creates: "/etc/systemd/system/actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ item }}.service"
   loop: "{{ github_runner_name }}"
+
 
 - name: Start the service
   ansible.builtin.systemd:
@@ -159,6 +147,3 @@
     name: "actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ item }}.service"
   tags: ["start_runner"]
   loop: "{{ github_runner_name }}"
-
-
-
