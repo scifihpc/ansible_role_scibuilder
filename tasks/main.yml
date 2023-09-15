@@ -42,13 +42,13 @@
     group: "{{ scibuilder_user_name }}"
 
 
-- name: Create buildcache folders
+- name: Create scibuilder cache folders
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ scibuilder_user_name }}"
     group: "{{ scibuilder_user_name }}"
-  with_items: "{{ scibuilder_buildcache_folders }}"
+  with_items: "{{ scibuilder_cache_folders }}"
 
 
 - name: Install podman

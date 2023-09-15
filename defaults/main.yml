@@ -5,7 +5,7 @@ scibuilder_local_folder: /opt/scibuilder
 scibuilder_user_name:    triton-ci
 scibuilder_user_uid:     2000407
 scibuilder_user_gid:     2000407
-scibuilder_buildcache_folders:
+scibuilder_cache_folders:
   - /opt/scibuilder/buildcache
   - /opt/scibuilder/buildcache-dev
 
