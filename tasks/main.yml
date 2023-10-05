@@ -48,8 +48,26 @@
     state: directory
     owner: "{{ scibuilder_user_name }}"
     group: "{{ scibuilder_user_name }}"
-  with_items: "{{ scibuilder_cache_folders }}"
+  loop: "{{ scibuilder_cache_folders }}"
 
+
+- name: Create podman storage folder
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ scibuilder_user_name }}"
+    group: "{{ scibuilder_user_name }}"
+  loop:
+    - "{{ scibuilder_podman_storage }}"
+    - "/home/{{ scibuilder_user_name }}/.config/containers"
+
+- name: Template podman storage configuration
+  ansible.builtin.template:
+    src: "storage.conf.j2"
+    dest: "/home/{{ scibuilder_user_name }}/.config/containers/storage.conf"
+    owner: "{{ scibuilder_user_name }}"
+    group: "{{ scibuilder_user_name }}"
+    mode: '0644'
 
 - name: Install podman
   ansible.builtin.dnf:
