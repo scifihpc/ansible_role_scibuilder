@@ -31,6 +31,8 @@
     - "{{scibuilder_user_name}}"
     subuid_bitshift: 8 
     subgid_bitshift: 8 #"{{subgid_bits}}"
+    subuid_uids: 131072
+    subgid_gids: 131072
   # remember that tag limitations will affect also the included roles. 
 
 
