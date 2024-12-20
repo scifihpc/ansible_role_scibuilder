@@ -121,7 +121,7 @@
 
 - name: Download actions-runner installer
   ansible.builtin.get_url:
-    src: "{{ github_runner_url }}/{{ github_runner_filename }}"
+    url: "{{ github_runner_url }}/{{ github_runner_filename }}"
     dest: "{{ github_runner_installer_cache }}/{{ github_runner_filename }}"
     group: "{{ scibuilder_user_name }}"
     owner: "{{ scibuilder_user_name }}"
