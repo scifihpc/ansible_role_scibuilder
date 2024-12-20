@@ -50,7 +50,7 @@
     state: directory
     owner: "{{ scibuilder_user_name }}"
     group: "{{ scibuilder_user_name }}"
-  loop: "{{ scibuilder_cache_folders }}"
+  loop: "{{ scibuilder_cache_folders + [github_runner_installer_cache] }}"
 
 
 - name: Create podman storage folder
@@ -109,23 +109,32 @@
     force: yes
   tags: [socket]
 
+
 - name: Create folder for runner
   ansible.builtin.file:
-    path: "{{ scibuilder_local_folder}}/runners/{{ item.name }}"
+    path: "{{ scibuilder_local_folder }}/runners/{{ item.name }}"
     state: directory
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
   loop: "{{ github_runners }}"
 
 
+- name: Download actions-runner installer
+  ansible.builtin.get_url:
+    src: "{{ github_runner_url }}/{{ github_runner_filename }}"
+    dest: "{{ github_runner_installer_cache }}/{{ github_runner_filename }}"
+    group: "{{ scibuilder_user_name }}"
+    owner: "{{ scibuilder_user_name }}"
+
+
 # https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
-- name: Download & Unarchive runner package
+- name: Unarchive runner package
   ansible.builtin.unarchive:
-    src:  "{{ github_runner_url }}{{github_runner_filename}}"
-    dest: "{{ scibuilder_local_folder}}/runners/{{ item.name }}"
-    remote_src: yes
-    group: "{{scibuilder_user_name}}"
-    owner: "{{scibuilder_user_name}}"
+    src:  "{{ github_runner_installer_cache }}/{{ github_runner_filename }}"
+    dest: "{{ scibuilder_local_folder }}/runners/{{ item.name }}"
+    group: "{{ scibuilder_user_name }}"
+    owner: "{{ scibuilder_user_name }}"
+    creates: "{{ scibuilder_local_folder}}/runners/{{ item.name }}/config.sh"
   loop: "{{ github_runners }}"
 
 

@@ -13,9 +13,12 @@ scibuilder_podman_storage: /opt/scibuilder/podman/storage
 
 # https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
 
+github_runner_installer_cache: "{{ scibuilder_local_folder }}/cache/actions-runner"
+
+# github runner version only affects new runners
 github_runner_version: 2.321.0
 github_runner_filename: "actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
-github_runner_url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/"
+github_runner_url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}"
 
 github_runners: []
 
