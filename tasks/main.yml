@@ -109,25 +109,24 @@
     force: yes
   tags: [socket]
 
-
 - name: Create folder for runner
   ansible.builtin.file:
-    path: "{{ scibuilder_local_folder}}/runners/{{ item }}"
+    path: "{{ scibuilder_local_folder}}/runners/{{ item.name }}"
     state: directory
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
-  loop: "{{ github_runner_name }}"
+  loop: "{{ github_runners }}"
 
 
 # https://docs.github.com/en/actions/hosting-your-own-runners/adding-self-hosted-runners
 - name: Download & Unarchive runner package
   ansible.builtin.unarchive:
     src:  "{{ github_runner_url }}{{github_runner_filename}}"
-    dest: "{{ scibuilder_local_folder}}/runners/{{ item }}"
+    dest: "{{ scibuilder_local_folder}}/runners/{{ item.name }}"
     remote_src: yes
     group: "{{scibuilder_user_name}}"
     owner: "{{scibuilder_user_name}}"
-  loop: "{{ github_runner_name }}"
+  loop: "{{ github_runners }}"
 
 
 - name: Install sudo to work as a different user
@@ -144,26 +143,26 @@
 
 - name: Configure the runner
   ansible.builtin.command:
-    cmd: "./config.sh --url https://github.com/{{github_runner_org}}/{{ github_runner_repo }} --token {{ github_runner_token }} --unattended --name {{ item }} --replace"
-    chdir:  "{{ scibuilder_local_folder}}/runners/{{ item }}"
-    creates: "{{ scibuilder_local_folder}}/runners/{{ item }}/svc.sh"
+    cmd: "./config.sh --url https://github.com/{{ item.org }}/{{ item.repo }} --token {{ item.token }} --unattended --name {{ item.name }} --replace"
+    chdir:  "{{ scibuilder_local_folder}}/runners/{{ item.name }}"
+    creates: "{{ scibuilder_local_folder}}/runners/{{ item.name }}/svc.sh"
   become: yes
   become_user: "{{scibuilder_user_name}}"
-  loop: "{{ github_runner_name }}"
+  loop: "{{ github_runners }}"
 
 
 # https://docs.github.com/en/actions/hosting-your-own-runners/configuring-the-self-hosted-runner-application-as-a-service
 - name: Install runner as a service
   ansible.builtin.command:
     cmd: "./svc.sh install {{ scibuilder_user_name }}"
-    chdir:  "{{ scibuilder_local_folder}}/runners/{{ item }}"
-    creates: "/etc/systemd/system/actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ item }}.service"
-  loop: "{{ github_runner_name }}"
+    chdir:  "{{ scibuilder_local_folder}}/runners/{{ item.name }}"
+    creates: "/etc/systemd/system/actions.runner.{{ item.org }}-{{ item.repo }}.{{ item.name }}.service"
+  loop: "{{ github_runners }}"
 
 
 - name: Start the service
   ansible.builtin.systemd:
     state: started
-    name: "actions.runner.{{github_runner_org}}-{{github_runner_repo}}.{{ item }}.service"
+    name: "actions.runner.{{ item.org }}-{{ item.repo }}.{{ item.name }}.service"
   tags: ["start_runner"]
-  loop: "{{ github_runner_name }}"
+  loop: "{{ github_runners }}"
