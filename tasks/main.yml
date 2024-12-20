@@ -135,6 +135,7 @@
     group: "{{ scibuilder_user_name }}"
     owner: "{{ scibuilder_user_name }}"
     creates: "{{ scibuilder_local_folder}}/runners/{{ item.name }}/config.sh"
+    remote_src: true
   loop: "{{ github_runners }}"
 
 
