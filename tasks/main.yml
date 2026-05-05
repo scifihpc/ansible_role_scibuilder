@@ -78,9 +78,11 @@
 
 
 - name: Create /etc/containers/nodocker to silence podman
-  ansible.builtin.file:
-    path: /etc/containers/nodocker
-    state: touch
+  # Using copy instead of file with `state: touch` so that the file date is not
+  # unnecessarily updated on every run
+  ansible.builtin.copy:
+    dest: /etc/containers/nodocker
+    content: ""
 
 
 - name: Start user podman socket
