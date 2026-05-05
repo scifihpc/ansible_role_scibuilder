@@ -26,14 +26,14 @@
   ansible.builtin.include_role:
     name: ansible-role-subuid_subgid
     tasks_from: "main"
-  vars: 
-    subid_users: 
+  vars:
+    subid_users:
     - "{{scibuilder_user_name}}"
-    subuid_bitshift: 8 
+    subuid_bitshift: 8
     subgid_bitshift: 8 #"{{subgid_bits}}"
     subuid_uids: 131072
     subgid_gids: 131072
-  # remember that tag limitations will affect also the included roles. 
+  # remember that tag limitations will affect also the included roles.
 
 
 - name: Create the local folder for scibuilder
@@ -91,7 +91,7 @@
   environment:
      XDG_RUNTIME_DIR: "/run/user/{{ scibuilder_user_uid }}"
      DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ scibuilder_user_uid }}/bus"
-  become: yes
+  become: true
   become_user: "{{scibuilder_user_name}}"
   tags: ["socket"]
 
@@ -106,7 +106,7 @@
     path: "/var/run/docker.sock"
     src: "/run/user/{{scibuilder_user_uid}}/podman/podman.sock"
     state: link
-    force: yes
+    force: true
   tags: [socket]
 
 
@@ -156,7 +156,7 @@
     cmd: "./config.sh --url https://github.com/{{ item.org }}/{{ item.repo }} --token {{ item.token }} --unattended --name {{ item.name }} --replace"
     chdir:  "{{ scibuilder_local_folder}}/runners/{{ item.name }}"
     creates: "{{ scibuilder_local_folder}}/runners/{{ item.name }}/svc.sh"
-  become: yes
+  become: true
   become_user: "{{scibuilder_user_name}}"
   loop: "{{ github_runners }}"
 
